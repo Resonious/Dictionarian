@@ -13,11 +13,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
 import androidx.fragment.app.Fragment
+import androidx.navigation.fragment.findNavController
 import androidx.ui.tooling.preview.Preview
 import me.nigelbaillie.dictionarian.ui.DictionarianTheme
 
 class StartFragment : Fragment() {
     private fun testClick() {
+        val destination = StartFragmentDirections.actionStartFragmentToAnalyseFragment()
+        findNavController().navigate(destination)
     }
 
     override fun onCreateView(

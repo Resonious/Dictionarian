@@ -7,5 +7,13 @@
     <fragment
         android:id="@+id/startFragment"
         android:name="me.nigelbaillie.dictionarian.StartFragment"
-        android:label="StartFragment" />
+        android:label="StartFragment" >
+        <action
+            android:id="@+id/action_startFragment_to_analyseFragment"
+            app:destination="@id/analyseFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/analyseFragment"
+        android:name="me.nigelbaillie.dictionarian.AnalyseFragment"
+        android:label="AnalyseFragment" />
 </navigation>
