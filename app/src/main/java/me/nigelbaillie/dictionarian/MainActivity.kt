@@ -10,40 +10,18 @@ import androidx.compose.material.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.setContent
+import androidx.navigation.findNavController
+import androidx.navigation.ui.setupWithNavController
 import androidx.ui.tooling.preview.Preview
+import com.google.android.material.navigation.NavigationView
 import me.nigelbaillie.dictionarian.ui.DictionarianTheme
 
 class MainActivity : AppCompatActivity() {
-    private fun testClick() {
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent {
-            DictionarianTheme {
-                Column(
-                    Modifier
-                        .clickable(onClick = ::testClick)
-                ) {
-                    // A surface container using the 'background' color from the theme
-                    Surface(color = MaterialTheme.colors.background) {
-                        Greeting("Android")
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun Greeting(name: String) {
-    Text(text = "Hello $name!")
-}
-
-@Preview(showBackground = true)
-@Composable
-fun DefaultPreview() {
-    DictionarianTheme {
-        Greeting("Android")
+        setContentView(R.layout.activity_main)
+        val navView: NavigationView = findViewById(R.id.nav_view)
+        val navController = findNavController(R.id.nav_host_fragment)
+        navView.setupWithNavController(navController)
     }
 }
