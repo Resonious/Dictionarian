@@ -1,5 +1,12 @@
 package me.nigelbaillie.dictionarian.ocr
 
+import android.graphics.Bitmap
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.core.content.res.ResourcesCompat
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+
 class Analyzer {
     // TODO
     // Try to come up with an interface that supports the processImage API here
@@ -10,7 +17,24 @@ class Analyzer {
     // https://developer.android.com/reference/kotlin/androidx/compose/ui/graphics/package-summary
     // https://developer.android.com/jetpack/compose/tutorial
 
-    fun analyse() {
+    suspend fun analyze(image: Bitmap): OCRResult = coroutineScope {
+        delay(2000)
 
+        val blocks = arrayOf(
+                TextBlock(
+                        bounds=Rect(Offset(195.0F, 142.0F), Offset(878.0F, 242.0F)),
+                        text="台風の前にやっておく..."
+                ),
+                TextBlock(
+                        bounds=Rect(Offset(155.0F, 380.0F), Offset(294.0F, 455.0F)),
+                        text="目次"
+                ),
+                TextBlock(
+                        bounds=Rect(Offset(155.0F, 530.0F), Offset(791.0F, 592.0F)),
+                        text="台風の接近が予想される場合"
+                )
+        )
+
+        Success(image, blocks)
     }
 }
