@@ -14,6 +14,6 @@
     </fragment>
     <fragment
         android:id="@+id/analyseFragment"
-        android:name="me.nigelbaillie.dictionarian.AnalyseFragment"
+        android:name="me.nigelbaillie.dictionarian.AnalyzeFragment"
         android:label="AnalyseFragment" />
 </navigation>

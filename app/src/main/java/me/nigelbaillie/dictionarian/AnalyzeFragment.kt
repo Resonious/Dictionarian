@@ -14,7 +14,9 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.fragment.app.Fragment
 import me.nigelbaillie.dictionarian.ui.DictionarianTheme
 
-class AnalyseFragment  : Fragment() {
+class AnalyzeFragment  : Fragment() {
+
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
