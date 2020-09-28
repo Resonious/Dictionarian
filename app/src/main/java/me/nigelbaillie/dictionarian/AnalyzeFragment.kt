@@ -93,19 +93,21 @@ class AnalyzeFragment : Fragment() {
 
     @OptIn(ExperimentalFoundationApi::class)
     @Composable
-    fun ShowTextBlock(block: TextBlock, modifier: Modifier = Modifier) {
+    fun ShowTextBlock(block: TextBlock, scale: Float) {
+        if (scale == 0F) return Box()
+
         Box(
-                modifier = modifier
-                        .offset(block.x.dp, block.y.dp)
-                        .width(block.width.dp)
-                        .height(block.height.dp)
+                modifier = Modifier
+                        .offset((block.x * scale).dp, (block.y * scale).dp)
+                        .width((block.width * scale).dp)
+                        .height((block.height * scale).dp)
                         .padding(0.dp),
-                backgroundColor = Color.Cyan,
+                backgroundColor = Color.Cyan, // Test to make border clear. should uh.. use white?
                 shape = RectangleShape
         ) {
             Text(
                     block.text,
-                    fontSize = TextUnit.Sp(block.height * 0.75F),
+                    fontSize = TextUnit.Sp(block.height * scale * 0.55F),
                     softWrap = false
             )
         }
@@ -114,7 +116,7 @@ class AnalyzeFragment : Fragment() {
     @Preview(showBackground = true)
     @Composable
     fun PreviewTextBlocks() {
-        val (scale, setScale) = remember { mutableStateOf(1F) }
+        val (scale, setScale) = remember { mutableStateOf(0F) }
         Log.d("NIGEL", "Scale is $scale")
 
         DictionarianTheme {
@@ -122,14 +124,8 @@ class AnalyzeFragment : Fragment() {
                     asset = imageResource(id = R.drawable.sample_image),
                     contentScale = LiveScale(ContentScale.Inside, setScale)
             )
-            val mod = Modifier
-                    .drawLayer(
-                            scaleX = scale,
-                            scaleY = scale,
-                            transformOrigin = TransformOrigin(0F, 0F)
-                    )
             Box(
-                    modifier = mod
+                    modifier = Modifier
                             .offset(900.dp, 0.dp)
                             .preferredWidth(90.dp)
                             .preferredHeight(90.dp),
@@ -139,15 +135,15 @@ class AnalyzeFragment : Fragment() {
             ShowTextBlock(TextBlock(
                     bounds= Rect(Offset(195.0F, 142.0F), Offset(878.0F, 242.0F)),
                     text="台風の前にやっておく..."
-            ), mod)
+            ), scale)
             ShowTextBlock(TextBlock(
                     bounds= Rect(Offset(155.0F, 380.0F), Offset(294.0F, 455.0F)),
                     text="目次"
-            ), mod)
+            ), scale)
             ShowTextBlock(TextBlock(
                     bounds= Rect(Offset(155.0F, 530.0F), Offset(791.0F, 592.0F)),
                     text="台風の接近が予想される場合"
-            ), mod)
+            ), scale)
         }
     }
 }
