@@ -1,6 +1,7 @@
 package me.nigelbaillie.dictionarian
 
 import android.os.Bundle
+import android.util.DisplayMetrics
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -11,20 +12,26 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Modifier
+import androidx.compose.ui.*
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.asImageAsset
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.id
+import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.ui.tooling.preview.Preview
@@ -42,14 +49,16 @@ class AnalyzeFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
+        val context = requireContext()
+        val display = context.resources.displayMetrics
 
-        return ComposeView(requireContext()).apply {
+        return ComposeView(context).apply {
             setContent {
                 DictionarianTheme {
-                    when (val result = model.result.value) {
+                    when (val value = model.result) {
                         null -> Text("PLEASE WAIT!!!")
-                        is Success -> AnalyzeResultImage(result = result)
-                        is Failure -> FailurePage(result = result)
+                        is Success -> AnalyzeResultImage(result = value, display = display)
+                        is Failure -> FailurePage(result = value)
                     }
                 }
             }
@@ -58,16 +67,77 @@ class AnalyzeFragment : Fragment() {
 }
 
 @Composable
-fun AnalyzeResultImage(result: Success) {
+fun AnalyzeResultImage(result: Success, display: DisplayMetrics) {
+    val pixelWidth = result.image.width
+    val pixelHeight = result.image.height
+
+    val measureBlock: MeasureBlock = { measurables, constraints ->
+        layout(constraints.maxWidth, constraints.maxHeight,
+                mapOf(
+                        HorizontalAlignmentLine { _, b -> b } to 0,
+                        VerticalAlignmentLine { _, b -> b } to 0,
+                )
+        ) {
+            Log.d("NIGELMSG", "Width:  ${constraints.minWidth}~${constraints.maxWidth}")
+            Log.d("NIGELMSG", "Height: ${constraints.minHeight}~${constraints.maxHeight}")
+
+            val heightScale = constraints.maxHeight.toFloat() / pixelHeight.toFloat()
+            val widthScale = constraints.maxHeight.toFloat() / pixelHeight.toFloat()
+            val scale = heightScale.coerceAtMost(widthScale)
+            val constraints = constraints.copy(
+                    minWidth = (constraints.minWidth * scale).toInt(),
+                    maxWidth = (constraints.maxWidth * scale).toInt(),
+                    minHeight = (constraints.minHeight * scale).toInt(),
+                    maxHeight = (constraints.maxHeight * scale).toInt(),
+            )
+
+            val image = when (val image = measurables.find { m -> m.id == "image" }) {
+                null -> return@layout
+                else -> image.measure(constraints)
+            }
+
+            image.place(0, 0)
+
+            Log.d("NIGELMSG", "Image xscale: ${image.width} / $pixelWidth ${image.width.toFloat() / pixelWidth.toFloat()}")
+            Log.d("NIGELMSG", "Image yscale: ${image.height} / $pixelHeight ${image.height.toFloat() / pixelHeight.toFloat()}")
+
+            for (measurable in measurables) {
+                if (measurable.id == "image") continue
+
+                val placeable = measurable.measure(constraints)
+                Log.d("NIGELMSG", "Placing ${measurable.id.toString()} ${image.width}x${image.height}")
+                placeable.place(-image.width/2 + placeable.width/2, -image.height/2 + placeable.height/2)
+            }
+        }
+    }
+
+    // Layout({ ImageAndTextBlocks(result) }, measureBlock = measureBlock)
+    ImageAndTextBlocks(result, display)
+}
+
+@Composable
+fun ImageAndTextBlocks(result: Success, display: DisplayMetrics) {
     val (scale, setScale) = remember { mutableStateOf(0F) }
-    Log.d("NIGEL", "Scale is $scale")
+
+    val bm = result.image
+    val densityScale = bm.density.toFloat() / display.densityDpi.toFloat()
+
+    Log.d("NIGELMSG", "Scale is effectively $scale * $densityScale = ${scale * densityScale}")
 
     Image(
-            result.image.asImageAsset(),
+            bm.asImageAsset(),
+            Modifier.layoutId("image"),
             contentScale = LiveScale(ContentScale.Inside, setScale)
     )
+    Box(
+            Modifier
+                    .offset(0.dp, 20.dp)
+                    .width(10.dp)
+                    .height(10.dp)
+                    .background(Color.Red, CircleShape),
+    ) {}
     for (block in result.blocks) {
-        ShowTextBlock(block, scale)
+        ShowTextBlock(block, scale * densityScale)
     }
 }
 
@@ -99,6 +169,7 @@ fun ShowTextBlock(block: TextBlock, scale: Float) {
                     .padding(0.dp)
                     .background(Color.Cyan)
                     .border(0.dp, Color.Cyan, RectangleShape)
+                    .layoutId("text:${block.text}")
     ) {
         Text(
                 block.text,
@@ -112,11 +183,15 @@ fun ShowTextBlock(block: TextBlock, scale: Float) {
 @Composable
 fun PreviewTextBlocks() {
     val (scale, setScale) = remember { mutableStateOf(0F) }
-    Log.d("NIGEL", "Scale is $scale")
+    Log.d("NIGELMSG", "Scale is $scale")
+
+    val bitmap = imageResource(id = R.drawable.sample_image).asAndroidBitmap()
+    Log.d("NIGELMSG", "Image:  ${bitmap.width} x ${bitmap.height}")
+    Log.d("NIGELMSG", "Density: ${bitmap.density}")
 
     DictionarianTheme {
         Image(
-                asset = imageResource(id = R.drawable.sample_image),
+                asset = bitmap.asImageAsset(),
                 contentScale = LiveScale(ContentScale.Inside, setScale)
         )
         Box(

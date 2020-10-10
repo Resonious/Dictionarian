@@ -1,6 +1,7 @@
 package me.nigelbaillie.dictionarian
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.Text
@@ -32,6 +33,7 @@ class MainActivity : AppCompatActivity() {
                 R.drawable.sample_image,
                 null
         )
+        Log.d("NIGELMSG", "WHAT HTE FLUCK? ${dummyExampleImage!!.toBitmap().height}")
         model.analyze(dummyExampleImage!!.toBitmap())
 
         // Setup navigator/content. See nav_graph.xml
