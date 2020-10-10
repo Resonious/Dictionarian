@@ -32,14 +32,9 @@ class StartFragment : Fragment() {
             setContent {
                 DictionarianTheme {
                     Column(
-                        Modifier
-                            .clickable(onClick = ::testClick)
+                        Modifier.clickable(onClick = ::testClick)
                     ) {
-                        // A surface container using the 'background' color from the theme
-                        Surface(color = MaterialTheme.colors.background) {
-                            Text("This is it")
-                            Greeting("Android")
-                        }
+                        Greeting("Android")
                     }
                 }
             }

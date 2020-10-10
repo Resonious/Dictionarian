@@ -6,7 +6,10 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.compose.foundation.*
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.Text
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.rememberScrollableController
 import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.*
@@ -26,6 +29,7 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.gesture.scrollorientationlocking.Orientation
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.asImageAsset
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.ComposeView
@@ -54,16 +58,10 @@ class AnalyzeFragment : Fragment() {
         return ComposeView(requireContext()).apply {
             setContent {
                 DictionarianTheme {
-                    Surface(color = MaterialTheme.colors.background) {
-                        when (val result = model.result.value) {
-                            null -> Text("PLEASE WAIT!!!")
-                            is Success -> AnalyzeResultImage(result = result)
-                            is Failure -> FailurePage(result = result)
-                        }
-                        Column() {
-                            Text("YES I AM")
-                            Text("ANOTHER ONE")
-                        }
+                    when (val result = model.result.value) {
+                        null -> Text("PLEASE WAIT!!!")
+                        is Success -> AnalyzeResultImage(result = result)
+                        is Failure -> FailurePage(result = result)
                     }
                 }
             }
@@ -91,19 +89,18 @@ class AnalyzeFragment : Fragment() {
         Image(result.image.asImageAsset())
     }
 
-    @OptIn(ExperimentalFoundationApi::class)
     @Composable
     fun ShowTextBlock(block: TextBlock, scale: Float) {
-        if (scale == 0F) return Box()
+        if (scale == 0F) return Text("")
 
         Box(
-                modifier = Modifier
+                Modifier
                         .offset((block.x * scale).dp, (block.y * scale).dp)
                         .width((block.width * scale).dp)
                         .height((block.height * scale).dp)
-                        .padding(0.dp),
-                backgroundColor = Color.Cyan, // Test to make border clear. should uh.. use white?
-                shape = RectangleShape
+                        .padding(0.dp)
+                        .background(Color.Cyan)
+                        .border(0.dp, Color.Cyan, RectangleShape)
         ) {
             Text(
                     block.text,
@@ -125,12 +122,12 @@ class AnalyzeFragment : Fragment() {
                     contentScale = LiveScale(ContentScale.Inside, setScale)
             )
             Box(
-                    modifier = Modifier
+                   Modifier
                             .offset(900.dp, 0.dp)
                             .preferredWidth(90.dp)
-                            .preferredHeight(90.dp),
-                    backgroundColor = Color.Red,
-                    shape = CircleShape
+                            .preferredHeight(90.dp)
+                            .background(Color.Red)
+                            .border(0.dp, Color.White, CircleShape),
             ) {}
             ShowTextBlock(TextBlock(
                     bounds= Rect(Offset(195.0F, 142.0F), Offset(878.0F, 242.0F)),
