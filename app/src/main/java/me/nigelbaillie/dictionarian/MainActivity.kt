@@ -20,6 +20,8 @@ import com.google.android.material.navigation.NavigationView
 import me.nigelbaillie.dictionarian.ui.DictionarianTheme
 
 class MainActivity : AppCompatActivity() {
+    private val model: AnalyzeViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -30,7 +32,6 @@ class MainActivity : AppCompatActivity() {
                 R.drawable.sample_image,
                 null
         )
-        val model: AnalyzeViewModel by viewModels()
         model.analyze(dummyExampleImage!!.toBitmap())
 
         // Setup navigator/content. See nav_graph.xml
