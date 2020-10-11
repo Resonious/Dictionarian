@@ -26,6 +26,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.res.imageResource
+import androidx.compose.ui.selection.Selection
+import androidx.compose.ui.selection.SelectionContainer
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.Fragment
@@ -93,8 +95,26 @@ fun ImageAndTextBlocks(result: Success, display: DisplayMetrics) {
                     .height(10.dp)
                     .background(Color.Red, CircleShape),
     ) {}
-    for (block in result.blocks) {
-        ShowTextBlock(block, scale * densityScale)
+
+    TextBlocks(result.blocks, scale * densityScale)
+}
+
+@Composable
+fun TextBlocks(blocks: Array<TextBlock>, scale: Float) {
+    val (selection, setSelection) = remember { mutableStateOf<Selection?>(null) }
+    // TODO can use this selection to uh... render dictionary or something
+
+    val realSetSelection = { selection: Selection? ->
+        setSelection(selection)
+        if (selection != null) {
+            Log.d("NIGELMSG", "Selected: ${selection.start.selectable.getText()} : ${selection.end.selectable.getText()}")
+        }
+    }
+
+    SelectionContainer(selection = selection, onSelectionChange = realSetSelection) {
+        for (block in blocks) {
+            ShowTextBlock(block, scale)
+        }
     }
 }
 

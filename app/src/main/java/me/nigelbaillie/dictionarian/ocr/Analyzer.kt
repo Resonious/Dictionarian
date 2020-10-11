@@ -26,8 +26,12 @@ class Analyzer {
                         text="hehe"
                 ),
                 TextBlock(
+                        bounds=Rect(Offset(10.0F, 50.0F), Offset(100.0F, 100.0F)),
+                        text="How's this 台風 taste"
+                ),
+                TextBlock(
                         bounds=Rect(Offset(195.0F, 142.0F), Offset(878.0F, 242.0F)),
-                        text="台風の前にやっておく..."
+                        text="台風iの前にやっておく..."
                 ),
                 TextBlock(
                         bounds=Rect(Offset(155.0F, 380.0F), Offset(294.0F, 455.0F)),
