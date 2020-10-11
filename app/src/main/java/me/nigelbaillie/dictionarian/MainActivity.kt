@@ -19,6 +19,7 @@ import androidx.core.graphics.drawable.toBitmap
 import androidx.navigation.findNavController
 import androidx.navigation.ui.setupWithNavController
 import androidx.ui.tooling.preview.Preview
+import com.google.android.gms.vision.text.TextRecognizer
 import com.google.android.material.navigation.NavigationView
 import me.nigelbaillie.dictionarian.ui.DictionarianTheme
 
@@ -27,6 +28,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        model.recognizer = TextRecognizer.Builder(applicationContext).build()
 
         when (intent?.action) {
             Intent.ACTION_SEND -> {
