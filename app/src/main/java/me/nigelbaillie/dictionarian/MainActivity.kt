@@ -15,6 +15,21 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        handleIntent(intent)
+
+        // Setup navigator/content. See nav_graph.xml
+        setContentView(R.layout.activity_main)
+        val navView: NavigationView = findViewById(R.id.nav_view)
+        val navController = findNavController(R.id.nav_host_fragment)
+        navView.setupWithNavController(navController)
+    }
+
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        handleIntent(intent)
+    }
+
+    private fun handleIntent(intent: Intent?) {
         when (intent?.action) {
             Intent.ACTION_SEND -> {
                 Log.d("NIGELMSG", "MainActivity.onCreate called with SEND intent")
@@ -25,11 +40,5 @@ class MainActivity : AppCompatActivity() {
                 // ...
             }
         }
-
-        // Setup navigator/content. See nav_graph.xml
-        setContentView(R.layout.activity_main)
-        val navView: NavigationView = findViewById(R.id.nav_view)
-        val navController = findNavController(R.id.nav_host_fragment)
-        navView.setupWithNavController(navController)
     }
 }
