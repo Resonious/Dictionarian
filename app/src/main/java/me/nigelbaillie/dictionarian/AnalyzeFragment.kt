@@ -68,51 +68,9 @@ class AnalyzeFragment : Fragment() {
 
 @Composable
 fun AnalyzeResultImage(result: Success, display: DisplayMetrics) {
-    val pixelWidth = result.image.width
-    val pixelHeight = result.image.height
-
-    val measureBlock: MeasureBlock = { measurables, constraints ->
-        layout(constraints.maxWidth, constraints.maxHeight,
-                mapOf(
-                        HorizontalAlignmentLine { _, b -> b } to 0,
-                        VerticalAlignmentLine { _, b -> b } to 0,
-                )
-        ) {
-            Log.d("NIGELMSG", "Width:  ${constraints.minWidth}~${constraints.maxWidth}")
-            Log.d("NIGELMSG", "Height: ${constraints.minHeight}~${constraints.maxHeight}")
-
-            val heightScale = constraints.maxHeight.toFloat() / pixelHeight.toFloat()
-            val widthScale = constraints.maxHeight.toFloat() / pixelHeight.toFloat()
-            val scale = heightScale.coerceAtMost(widthScale)
-            val constraints = constraints.copy(
-                    minWidth = (constraints.minWidth * scale).toInt(),
-                    maxWidth = (constraints.maxWidth * scale).toInt(),
-                    minHeight = (constraints.minHeight * scale).toInt(),
-                    maxHeight = (constraints.maxHeight * scale).toInt(),
-            )
-
-            val image = when (val image = measurables.find { m -> m.id == "image" }) {
-                null -> return@layout
-                else -> image.measure(constraints)
-            }
-
-            image.place(0, 0)
-
-            Log.d("NIGELMSG", "Image xscale: ${image.width} / $pixelWidth ${image.width.toFloat() / pixelWidth.toFloat()}")
-            Log.d("NIGELMSG", "Image yscale: ${image.height} / $pixelHeight ${image.height.toFloat() / pixelHeight.toFloat()}")
-
-            for (measurable in measurables) {
-                if (measurable.id == "image") continue
-
-                val placeable = measurable.measure(constraints)
-                Log.d("NIGELMSG", "Placing ${measurable.id.toString()} ${image.width}x${image.height}")
-                placeable.place(-image.width/2 + placeable.width/2, -image.height/2 + placeable.height/2)
-            }
-        }
+    Box {
+        ImageAndTextBlocks(result, display)
     }
-
-    // Layout({ ImageAndTextBlocks(result) }, measureBlock = measureBlock)
-    ImageAndTextBlocks(result, display)
 }
 
 @Composable
