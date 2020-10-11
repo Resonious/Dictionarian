@@ -7,13 +7,13 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.Text
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Surface
+import androidx.compose.material.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -30,12 +30,17 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.selection.Selection
 import androidx.compose.ui.selection.SelectionContainer
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.ui.tooling.preview.Preview
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import me.nigelbaillie.dictionarian.ocr.Failure
 import me.nigelbaillie.dictionarian.ocr.InProgress
 import me.nigelbaillie.dictionarian.ocr.Success
@@ -69,161 +74,151 @@ class AnalyzeFragment : Fragment() {
             }
         }
     }
-}
 
-@Composable
-fun AnalyzeResultImage(result: Success, display: DisplayMetrics) {
-    Box {
-        ImageAndTextBlocks(result, display)
+    @Composable
+    fun AnalyzeResultImage(result: Success, display: DisplayMetrics) {
+        val scrollState = rememberScrollState(0F)
+
+        ScrollableColumn(scrollState = scrollState) {
+            Box {
+                ImageAndTextBlocks(result, display)
+            }
+
+            // TODO use TextFieldValue for this guy. Can help with selection manipulation
+            // https://developer.android.com/reference/kotlin/androidx/compose/ui/text/input/TextFieldValue.html
+            OutlinedTextField(
+                value = model.query,
+                onValueChange = { model.query = it },
+                modifier = Modifier.align(Alignment.CenterHorizontally),
+                imeAction = ImeAction.Search,
+                onImeActionPerformed = { _, keyboard ->
+                    keyboard?.hideSoftwareKeyboard()
+                },
+                // onTextInputStarted = {
+                    // scrollState.smoothScrollTo(scrollState.maxValue)
+                // }
+            )
+
+            Box(Modifier.background(Color.Red).height(500.dp)) {  }
+        }
     }
-}
 
-@Composable
-fun ImageAndTextBlocks(result: Success, display: DisplayMetrics) {
-    val (scale, setScale) = remember { mutableStateOf(0F) }
+    @Composable
+    fun ImageAndTextBlocks(result: Success, display: DisplayMetrics) {
+        val (scale, setScale) = remember { mutableStateOf(0F) }
 
-    val bm = result.image
-    val densityScale = if (bm.density == 0)
+        val bm = result.image
+        val densityScale = if (bm.density == Bitmap.DENSITY_NONE)
             DisplayMetrics.DENSITY_DEFAULT / display.densityDpi.toFloat()
         else
             bm.density.toFloat() / display.densityDpi.toFloat()
 
-    Log.d("NIGELMSG", "Display is ${display.densityDpi} DPI")
-    Log.d("NIGELMSG", "Scale is effectively $scale * $densityScale = ${scale * densityScale}")
+        Log.d("NIGELMSG", "Display is ${display.densityDpi} DPI")
+        Log.d("NIGELMSG", "Scale is effectively $scale * $densityScale = ${scale * densityScale}")
 
-    Image(
+        Image(
             bm.asImageAsset(),
             Modifier.layoutId("image"),
             contentScale = LiveScale(ContentScale.Inside, setScale)
-    )
+        )
 
-    TextBlocks(result.blocks, scale * densityScale)
-}
-
-@Composable
-fun TextBlocks(blocks: Array<TextBlock>, scale: Float) {
-    val (selection, setSelection) = remember { mutableStateOf<Selection?>(null) }
-    // TODO can use this selection to uh... render dictionary or something
-
-    val realSetSelection = { selection: Selection? ->
-        setSelection(selection)
-        if (selection != null) {
-            Log.d("NIGELMSG", "Selected: ${selection.start.selectable.getText()} : ${selection.end.selectable.getText()}")
+        for (block in result.blocks) {
+            ShowTextBlock(block, scale * densityScale)
         }
     }
 
-    Box(
-        Modifier
-            .offset(0.dp, 20.dp * scale)
-            .width(10.dp * scale)
-            .height(10.dp * scale)
-            .background(Color.Red, CircleShape),
-    ) {}
-    Box(
-        Modifier
-            .offset(10.dp * scale, 20.dp * scale)
-            .width(10.dp * scale)
-            .height(10.dp * scale)
-            .background(Color.Red, CircleShape),
-    ) {}
-
-    SelectionContainer(selection = selection, onSelectionChange = realSetSelection) {
-        for (block in blocks) {
-            ShowTextBlock(block, scale)
+    @Composable
+    fun FailurePage(result: Failure) {
+        Column {
+            Text("Something went wrong:")
+            Text(result.reason)
         }
     }
-}
 
-@Composable
-fun FailurePage(result: Failure) {
-    Column {
-        Text("Something went wrong:")
-        Text(result.reason)
+    @Composable
+    fun InProgressPage(result: InProgress) {
+        Column {
+            Text("Wahoo")
+            Text(result.message)
+        }
     }
-}
 
-@Composable
-fun InProgressPage(result: InProgress) {
-    Column {
-        Text("Wahoo")
-        Text(result.message)
+    @Preview(showBackground = true)
+    @Composable
+    fun PreviewFailurePage() {
+        DictionarianTheme {
+            FailurePage(Failure(reason = "I suck. This is an example"))
+        }
     }
-}
 
-@Preview(showBackground = true)
-@Composable
-fun PreviewFailurePage() {
-    DictionarianTheme {
-        FailurePage(Failure(reason = "I suck. This is an example"))
-    }
-}
+    @Composable
+    fun ShowTextBlock(block: TextBlock, scale: Float) {
+        if (scale == 0F) return
 
-@Composable
-fun ShowTextBlock(block: TextBlock, scale: Float) {
-    if (scale == 0F) return
+        val backdrop = Color.White
+        val foreground = Color.Black
 
-    val backdrop = Color.White
-    val foreground = Color.Black
+        val thinness = if (block.height > block.width)
+            block.width
+        else
+            block.height
 
-    val thinness = if (block.height > block.width)
-        block.width
-    else
-        block.height
-
-    Box(
+        Box(
             Modifier
-                    .offset((block.x * scale).dp, (block.y * scale).dp)
-                    .width((block.width * scale).dp)
-                    .height((block.height * scale).dp)
-                    .padding(0.dp)
-                    .background(backdrop.copy(alpha = 0.9F))
-                    .border(0.dp, backdrop, RectangleShape)
-                    .layoutId("text:${block.text}")
-    ) {
-        Text(
+                .offset((block.x * scale).dp, (block.y * scale).dp)
+                .width((block.width * scale).dp)
+                .height((block.height * scale).dp)
+                .padding(0.dp)
+                .background(backdrop.copy(alpha = 0.9F))
+                .border(0.dp, backdrop, RectangleShape)
+                .layoutId("text:${block.text}")
+                .clickable { model.query += block.text }
+        ) {
+            Text(
                 block.text,
                 fontSize = TextUnit.Sp(thinness * scale * 0.75F),
                 color = foreground,
                 overflow = TextOverflow.Clip,
                 softWrap = true
-        )
+            )
+        }
     }
-}
 
-@Preview(showBackground = true)
-@Composable
-fun PreviewTextBlocks() {
-    val (scale, setScale) = remember { mutableStateOf(0F) }
-    Log.d("NIGELMSG", "Scale is $scale")
+    @Preview(showBackground = true)
+    @Composable
+    fun PreviewTextBlocks() {
+        val (scale, setScale) = remember { mutableStateOf(0F) }
+        Log.d("NIGELMSG", "Scale is $scale")
 
-    val bitmap = imageResource(id = R.drawable.sample_image).asAndroidBitmap()
-    Log.d("NIGELMSG", "Image:  ${bitmap.width} x ${bitmap.height}")
-    Log.d("NIGELMSG", "Density: ${bitmap.density}")
+        val bitmap = imageResource(id = R.drawable.sample_image).asAndroidBitmap()
+        Log.d("NIGELMSG", "Image:  ${bitmap.width} x ${bitmap.height}")
+        Log.d("NIGELMSG", "Density: ${bitmap.density}")
 
-    DictionarianTheme {
-        Image(
+        DictionarianTheme {
+            Image(
                 asset = bitmap.asImageAsset(),
                 contentScale = LiveScale(ContentScale.Inside, setScale)
-        )
-        Box(
+            )
+            Box(
                 Modifier
-                        .offset(900.dp, 0.dp)
-                        .preferredWidth(90.dp)
-                        .preferredHeight(90.dp)
-                        .background(Color.Red)
-                        .border(0.dp, Color.White, CircleShape),
-        ) {}
-        ShowTextBlock(TextBlock(
+                    .offset(900.dp, 0.dp)
+                    .preferredWidth(90.dp)
+                    .preferredHeight(90.dp)
+                    .background(Color.Red)
+                    .border(0.dp, Color.White, CircleShape),
+            ) {}
+            ShowTextBlock(TextBlock(
                 bounds= Rect(Offset(195.0F, 142.0F), Offset(878.0F, 242.0F)),
                 text="台風の前にやっておく..."
-        ), scale)
-        ShowTextBlock(TextBlock(
+            ), scale)
+            ShowTextBlock(TextBlock(
                 bounds= Rect(Offset(155.0F, 380.0F), Offset(294.0F, 455.0F)),
                 text="目次"
-        ), scale)
-        ShowTextBlock(TextBlock(
+            ), scale)
+            ShowTextBlock(TextBlock(
                 bounds= Rect(Offset(155.0F, 530.0F), Offset(791.0F, 592.0F)),
                 text="台風の接近が予想される場合"
-        ), scale)
+            ), scale)
+        }
     }
 }

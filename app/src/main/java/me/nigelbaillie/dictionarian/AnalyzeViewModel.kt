@@ -14,14 +14,15 @@ import androidx.lifecycle.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import me.nigelbaillie.dictionarian.ocr.Analyzer
-import me.nigelbaillie.dictionarian.ocr.Failure
-import me.nigelbaillie.dictionarian.ocr.InProgress
-import me.nigelbaillie.dictionarian.ocr.OCRResult
+import me.nigelbaillie.dictionarian.ocr.*
 
 class AnalyzeViewModel : ViewModel() {
     var result: OCRResult? by mutableStateOf(null)
         private set
+
+    var query: String by mutableStateOf("")
+
+    private var lastAnalyzedUri: Uri? = null
 
     fun analyze(image: Bitmap) = viewModelScope.launch {
         result = InProgress("Test delay lol")
@@ -35,6 +36,9 @@ class AnalyzeViewModel : ViewModel() {
             result = Failure("Invalid image share")
             return
         }
+        else if (uri == lastAnalyzedUri) {
+            return
+        }
         result = InProgress("Downloading image")
 
         viewModelScope.launch(Dispatchers.IO) {
@@ -42,6 +46,11 @@ class AnalyzeViewModel : ViewModel() {
             val bitmap = ImageDecoder.decodeBitmap(source)
             result = InProgress("Analyzing image")
             result = Analyzer().analyze(bitmap)
+
+            lastAnalyzedUri = when (result) {
+                is Success -> uri
+                else -> null
+            }
         }
     }
 }
