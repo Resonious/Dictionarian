@@ -1,5 +1,6 @@
 package me.nigelbaillie.dictionarian
 
+import android.graphics.Bitmap
 import android.os.Bundle
 import android.util.DisplayMetrics
 import android.util.Log
@@ -12,6 +13,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -28,6 +30,7 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.selection.Selection
 import androidx.compose.ui.selection.SelectionContainer
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.Fragment
@@ -54,11 +57,13 @@ class AnalyzeFragment : Fragment() {
         return ComposeView(context).apply {
             setContent {
                 DictionarianTheme {
-                    when (val value = model.result) {
-                        null -> Text("No image selected!")
-                        is Success -> AnalyzeResultImage(result = value, display = display)
-                        is Failure -> FailurePage(result = value)
-                        is InProgress -> InProgressPage(result = value)
+                    Surface {
+                        when (val value = model.result) {
+                            null -> Text("No image selected!")
+                            is Success -> AnalyzeResultImage(result = value, display = display)
+                            is Failure -> FailurePage(result = value)
+                            is InProgress -> InProgressPage(result = value)
+                        }
                     }
                 }
             }
@@ -78,9 +83,12 @@ fun ImageAndTextBlocks(result: Success, display: DisplayMetrics) {
     val (scale, setScale) = remember { mutableStateOf(0F) }
 
     val bm = result.image
-    val densityScale = if (bm.density == 0) 1F
-                       else bm.density.toFloat() / display.densityDpi.toFloat()
+    val densityScale = if (bm.density == 0)
+            DisplayMetrics.DENSITY_DEFAULT / display.densityDpi.toFloat()
+        else
+            bm.density.toFloat() / display.densityDpi.toFloat()
 
+    Log.d("NIGELMSG", "Display is ${display.densityDpi} DPI")
     Log.d("NIGELMSG", "Scale is effectively $scale * $densityScale = ${scale * densityScale}")
 
     Image(
@@ -88,13 +96,6 @@ fun ImageAndTextBlocks(result: Success, display: DisplayMetrics) {
             Modifier.layoutId("image"),
             contentScale = LiveScale(ContentScale.Inside, setScale)
     )
-    Box(
-            Modifier
-                    .offset(0.dp, 20.dp)
-                    .width(10.dp)
-                    .height(10.dp)
-                    .background(Color.Red, CircleShape),
-    ) {}
 
     TextBlocks(result.blocks, scale * densityScale)
 }
@@ -110,6 +111,21 @@ fun TextBlocks(blocks: Array<TextBlock>, scale: Float) {
             Log.d("NIGELMSG", "Selected: ${selection.start.selectable.getText()} : ${selection.end.selectable.getText()}")
         }
     }
+
+    Box(
+        Modifier
+            .offset(0.dp, 20.dp * scale)
+            .width(10.dp * scale)
+            .height(10.dp * scale)
+            .background(Color.Red, CircleShape),
+    ) {}
+    Box(
+        Modifier
+            .offset(10.dp * scale, 20.dp * scale)
+            .width(10.dp * scale)
+            .height(10.dp * scale)
+            .background(Color.Red, CircleShape),
+    ) {}
 
     SelectionContainer(selection = selection, onSelectionChange = realSetSelection) {
         for (block in blocks) {
@@ -146,20 +162,30 @@ fun PreviewFailurePage() {
 fun ShowTextBlock(block: TextBlock, scale: Float) {
     if (scale == 0F) return
 
+    val backdrop = Color.White
+    val foreground = Color.Black
+
+    val thinness = if (block.height > block.width)
+        block.width
+    else
+        block.height
+
     Box(
             Modifier
                     .offset((block.x * scale).dp, (block.y * scale).dp)
                     .width((block.width * scale).dp)
                     .height((block.height * scale).dp)
                     .padding(0.dp)
-                    .background(Color.Cyan)
-                    .border(0.dp, Color.Cyan, RectangleShape)
+                    .background(backdrop.copy(alpha = 0.9F))
+                    .border(0.dp, backdrop, RectangleShape)
                     .layoutId("text:${block.text}")
     ) {
         Text(
                 block.text,
-                fontSize = TextUnit.Sp(block.height * scale * 0.55F),
-                softWrap = false
+                fontSize = TextUnit.Sp(thinness * scale * 0.75F),
+                color = foreground,
+                overflow = TextOverflow.Clip,
+                softWrap = true
         )
     }
 }

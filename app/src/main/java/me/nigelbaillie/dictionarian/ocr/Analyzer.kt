@@ -2,44 +2,59 @@ package me.nigelbaillie.dictionarian.ocr
 
 import android.graphics.Bitmap
 import android.util.Log
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
-import androidx.core.content.res.ResourcesCompat
-import com.google.android.gms.vision.Detector
-import com.google.android.gms.vision.Frame
-import com.google.android.gms.vision.text.TextRecognizer
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
+import com.google.firebase.ml.vision.FirebaseVision
+import com.google.firebase.ml.vision.common.FirebaseVisionImage
+import com.google.firebase.ml.vision.text.FirebaseVisionCloudTextRecognizerOptions
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 
-class Analyzer(val recognizer: TextRecognizer?) {
-    suspend fun analyze(image: Bitmap): OCRResult = coroutineScope {
-        if (recognizer == null)
-            return@coroutineScope Failure("TextRecognizer not supplied");
-        if (!recognizer.isOperational)
-            return@coroutineScope Failure("TextRecognizer not operational");
+class Analyzer() {
+    private val options = FirebaseVisionCloudTextRecognizerOptions.Builder()
+        .setLanguageHints(listOf("ja", "en"))
+        .build()
+    private val detector = FirebaseVision.getInstance().getCloudTextRecognizer(options)
 
-        val imageCopy = image.copy(Bitmap.Config.ARGB_8888, false)
-        val items = recognizer.detect(Frame.Builder().setBitmap(imageCopy).build())
-        val blocks: MutableList<TextBlock> = mutableListOf()
+    suspend fun analyze(image: Bitmap): OCRResult = suspendCoroutine {
+        val imageCopy = image.copy(image.config, false)
+        val inputImage = FirebaseVisionImage.fromBitmap(imageCopy)
 
-        for (i in 0 until items.size()) {
-            val item = items.valueAt(i)
-            val text = item?.value ?: continue
-            val bounds = item.boundingBox
+        detector.processImage(inputImage)
+            .addOnSuccessListener { result ->
+                val blocks: MutableList<TextBlock> = mutableListOf()
 
-            Log.d("NIGELMSG", "Found \"${text}\"")
+                for (block in result.textBlocks) {
+                    for (line in block.lines) {
+                        val bounds = line.boundingBox ?: continue
+                        Log.d("NIGELMSG", "Found \"${line.text}\" at ${bounds.toString()}")
 
-            blocks.add(
-                TextBlock(
-                    bounds.left.toFloat(),
-                    bounds.top.toFloat(),
-                    bounds.right.toFloat(),
-                    bounds.bottom.toFloat(),
-                    text
+                        for (element in line.elements) {
+                            val bounds = element.boundingBox ?: continue
+                            val padding = 1.2F
+
+                            val rect = Rect(
+                                bounds.left.toFloat(),
+                                bounds.top.toFloat(),
+                                bounds.right.toFloat(),
+                                bounds.bottom.toFloat(),
+                            )
+
+                            blocks.add(
+                                TextBlock(rect.inflate(padding), element.text)
+                            )
+                        }
+                    }
+                }
+
+                it.resume(Success(image, blocks.toTypedArray()))
+            }
+            .addOnFailureListener { error ->
+                it.resume(
+                    Failure(
+                        if (error.localizedMessage != null) error.localizedMessage
+                        else "Unknown error"
+                    )
                 )
-            )
-        }
-
-        Success(image, blocks.toTypedArray())
+            }
     }
 }

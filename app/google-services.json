@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "400113796841",
+    "firebase_url": "https://dictionarian.firebaseio.com",
+    "project_id": "dictionarian",
+    "storage_bucket": "dictionarian.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:400113796841:android:2e5edb35d3da0b80ae1278",
+        "android_client_info": {
+          "package_name": "me.nigelbaillie.dictionarian"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "400113796841-9vanmlbloqpsre11665i86lq7mrefhev.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBveK9M-X7onsYqQ_V85jv2nHwXQvjnFqc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "400113796841-9vanmlbloqpsre11665i86lq7mrefhev.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
