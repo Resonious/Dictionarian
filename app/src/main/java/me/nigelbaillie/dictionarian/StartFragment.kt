@@ -19,8 +19,8 @@ import me.nigelbaillie.dictionarian.ui.DictionarianTheme
 
 class StartFragment : Fragment() {
     private fun testClick() {
-        val destination = StartFragmentDirections.actionStartFragmentToAnalyseFragment()
-        findNavController().navigate(destination)
+        // val destination = StartFragmentDirections.actionStartFragmentToAnalyseFragment()
+        // findNavController().navigate(destination)
     }
 
     override fun onCreateView(

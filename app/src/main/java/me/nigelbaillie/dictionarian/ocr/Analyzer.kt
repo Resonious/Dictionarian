@@ -22,6 +22,10 @@ class Analyzer {
 
         val blocks = arrayOf(
                 TextBlock(
+                        bounds=Rect(Offset(10.0F, 10.0F), Offset(50.0F, 20.0F)),
+                        text="hehe"
+                ),
+                TextBlock(
                         bounds=Rect(Offset(195.0F, 142.0F), Offset(878.0F, 242.0F)),
                         text="台風の前にやっておく..."
                 ),

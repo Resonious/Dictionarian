@@ -12,9 +12,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.*
@@ -25,17 +23,16 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.asImageAsset
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.id
 import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
-import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.ui.tooling.preview.Preview
 import me.nigelbaillie.dictionarian.ocr.Failure
+import me.nigelbaillie.dictionarian.ocr.InProgress
 import me.nigelbaillie.dictionarian.ocr.Success
 import me.nigelbaillie.dictionarian.ocr.TextBlock
 import me.nigelbaillie.dictionarian.ui.DictionarianTheme
@@ -56,9 +53,10 @@ class AnalyzeFragment : Fragment() {
             setContent {
                 DictionarianTheme {
                     when (val value = model.result) {
-                        null -> Text("PLEASE WAIT!!!")
+                        null -> Text("No image selected!")
                         is Success -> AnalyzeResultImage(result = value, display = display)
                         is Failure -> FailurePage(result = value)
+                        is InProgress -> InProgressPage(result = value)
                     }
                 }
             }
@@ -78,7 +76,8 @@ fun ImageAndTextBlocks(result: Success, display: DisplayMetrics) {
     val (scale, setScale) = remember { mutableStateOf(0F) }
 
     val bm = result.image
-    val densityScale = bm.density.toFloat() / display.densityDpi.toFloat()
+    val densityScale = if (bm.density == 0) 1F
+                       else bm.density.toFloat() / display.densityDpi.toFloat()
 
     Log.d("NIGELMSG", "Scale is effectively $scale * $densityScale = ${scale * densityScale}")
 
@@ -104,6 +103,14 @@ fun FailurePage(result: Failure) {
     Column {
         Text("Something went wrong:")
         Text(result.reason)
+    }
+}
+
+@Composable
+fun InProgressPage(result: InProgress) {
+    Column {
+        Text("Wahoo")
+        Text(result.message)
     }
 }
 

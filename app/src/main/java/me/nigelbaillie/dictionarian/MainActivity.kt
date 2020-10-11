@@ -1,5 +1,6 @@
 package me.nigelbaillie.dictionarian
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.viewModels
@@ -12,6 +13,7 @@ import androidx.compose.material.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.setContent
+import androidx.compose.ui.res.stringResource
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.drawable.toBitmap
 import androidx.navigation.findNavController
@@ -26,15 +28,16 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Analyze image
-        // TODO this step should only happen if an image was passed in via intent etc
-        val dummyExampleImage = ResourcesCompat.getDrawable(
-                resources,
-                R.drawable.sample_image,
-                null
-        )
-        Log.d("NIGELMSG", "WHAT HTE FLUCK? ${dummyExampleImage!!.toBitmap().height}")
-        model.analyze(dummyExampleImage!!.toBitmap())
+        when (intent?.action) {
+            Intent.ACTION_SEND -> {
+                Log.d("NIGELMSG", "MainActivity.onCreate called with SEND intent")
+                model.analyze(intent, contentResolver)
+            }
+            else -> {
+                Log.d("NIGELMSG", "MainActivity.onCreate called with no intent")
+                // ...
+            }
+        }
 
         // Setup navigator/content. See nav_graph.xml
         setContentView(R.layout.activity_main)
