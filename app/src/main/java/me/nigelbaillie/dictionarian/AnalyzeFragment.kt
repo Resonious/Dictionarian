@@ -1,5 +1,6 @@
 package me.nigelbaillie.dictionarian
 
+import android.content.Intent
 import android.graphics.Bitmap
 import android.os.Bundle
 import android.util.DisplayMetrics
@@ -11,9 +12,9 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.OutlinedTextField
-import androidx.compose.material.Surface
-import androidx.compose.material.TextField
+import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Share
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -82,18 +83,37 @@ class AnalyzeFragment : Fragment() {
         val scrollState = rememberScrollState(0F)
 
         ScrollableColumn(scrollState = scrollState) {
-            Box {
-                ImageAndTextBlocks(result, display)
-            }
+            Box { ImageAndTextBlocks(result, display) }
 
+            QueryTextInput(scrollState)
+
+            Box(Modifier.background(Color.Red).height(50.dp)) {  }
+        }
+    }
+
+    @Composable
+    fun QueryTextInput(scrollState: ScrollState) {
+        fun shareQuery() {
+            val sendIntent: Intent = Intent().apply {
+                action = Intent.ACTION_SEND
+                putExtra(Intent.EXTRA_TEXT, model.query.text)
+                type = "text/plain"
+            }
+            val shareIntent = Intent.createChooser(sendIntent, "Lookup")
+            startActivity(shareIntent)
+        }
+
+        Row(
+
+        ) {
             OutlinedTextField(
                 model.query, {
                     model.query = it
                 },
-                Modifier.align(Alignment.CenterHorizontally),
                 imeAction = ImeAction.Search,
                 onImeActionPerformed = { _, keyboard ->
                     keyboard?.hideSoftwareKeyboard()
+                    shareQuery()
                 },
                 onTextInputStarted = {
                     lifecycleScope.launch {
@@ -103,7 +123,10 @@ class AnalyzeFragment : Fragment() {
                 }
             )
 
-            Box(Modifier.background(Color.Red).height(50.dp)) {  }
+            IconButton(
+                modifier = Modifier.align(Alignment.CenterVertically),
+                onClick = { shareQuery() }
+            ) { Icon(asset = Icons.Rounded.Share) }
         }
     }
 
