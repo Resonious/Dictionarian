@@ -30,7 +30,9 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.selection.Selection
 import androidx.compose.ui.selection.SelectionContainer
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
@@ -84,19 +86,18 @@ class AnalyzeFragment : Fragment() {
                 ImageAndTextBlocks(result, display)
             }
 
-            // TODO use TextFieldValue for this guy. Can help with selection manipulation
-            // https://developer.android.com/reference/kotlin/androidx/compose/ui/text/input/TextFieldValue.html
             OutlinedTextField(
-                value = model.query,
-                onValueChange = { model.query = it },
-                modifier = Modifier.align(Alignment.CenterHorizontally),
+                model.query, {
+                    model.query = it
+                },
+                Modifier.align(Alignment.CenterHorizontally),
                 imeAction = ImeAction.Search,
                 onImeActionPerformed = { _, keyboard ->
                     keyboard?.hideSoftwareKeyboard()
                 },
-                // onTextInputStarted = {
-                    // scrollState.smoothScrollTo(scrollState.maxValue)
-                // }
+                onTextInputStarted = {
+                    scrollState.smoothScrollTo(scrollState.maxValue)
+                }
             )
 
             Box(Modifier.background(Color.Red).height(500.dp)) {  }
@@ -109,7 +110,7 @@ class AnalyzeFragment : Fragment() {
 
         val bm = result.image
         val densityScale = if (bm.density == Bitmap.DENSITY_NONE)
-            DisplayMetrics.DENSITY_DEFAULT / display.densityDpi.toFloat()
+            DisplayMetrics.DENSITY_DEFAULT.toFloat() / display.densityDpi.toFloat()
         else
             bm.density.toFloat() / display.densityDpi.toFloat()
 
@@ -172,7 +173,13 @@ class AnalyzeFragment : Fragment() {
                 .background(backdrop.copy(alpha = 0.9F))
                 .border(0.dp, backdrop, RectangleShape)
                 .layoutId("text:${block.text}")
-                .clickable { model.query += block.text }
+                .clickable {
+                    val newText = model.query.text + block.text
+                    model.query = model.query.copy(
+                        newText,
+                        TextRange(newText.length - block.text.length, newText.length)
+                    )
+                }
         ) {
             Text(
                 block.text,

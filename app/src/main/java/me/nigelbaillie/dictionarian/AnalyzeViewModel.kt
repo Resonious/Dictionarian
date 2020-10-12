@@ -10,6 +10,7 @@ import android.os.Parcelable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -20,7 +21,7 @@ class AnalyzeViewModel : ViewModel() {
     var result: OCRResult? by mutableStateOf(null)
         private set
 
-    var query: String by mutableStateOf("")
+    var query: TextFieldValue by mutableStateOf(TextFieldValue())
 
     private var lastAnalyzedUri: Uri? = null
 
