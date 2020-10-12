@@ -96,11 +96,14 @@ class AnalyzeFragment : Fragment() {
                     keyboard?.hideSoftwareKeyboard()
                 },
                 onTextInputStarted = {
-                    scrollState.smoothScrollTo(scrollState.maxValue)
+                    lifecycleScope.launch {
+                        delay(500)
+                        scrollState.smoothScrollTo(scrollState.maxValue)
+                    }
                 }
             )
 
-            Box(Modifier.background(Color.Red).height(500.dp)) {  }
+            Box(Modifier.background(Color.Red).height(50.dp)) {  }
         }
     }
 
