@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Clear
 import androidx.compose.material.icons.rounded.Share
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
@@ -29,14 +30,17 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.res.imageResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.selection.Selection
 import androidx.compose.ui.selection.SelectionContainer
 import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.font.*
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
@@ -54,6 +58,9 @@ import me.nigelbaillie.dictionarian.ui.LiveScale
 class AnalyzeFragment : Fragment() {
     private val model: AnalyzeViewModel by activityViewModels()
 
+    private val juraFont = ResourceFont(R.font.jura)
+    private val latoFont = ResourceFont(R.font.lato)
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -67,7 +74,7 @@ class AnalyzeFragment : Fragment() {
                 DictionarianTheme {
                     Surface {
                         when (val value = model.result) {
-                            null -> Text("No image selected!")
+                            null -> InProgressPage(InProgress("'Share' an image from another app!"))
                             is Success -> AnalyzeResultImage(result = value, display = display)
                             is Failure -> FailurePage(result = value)
                             is InProgress -> InProgressPage(result = value)
@@ -82,12 +89,19 @@ class AnalyzeFragment : Fragment() {
     fun AnalyzeResultImage(result: Success, display: DisplayMetrics) {
         val scrollState = rememberScrollState(0F)
 
-        ScrollableColumn(scrollState = scrollState) {
-            Box { ImageAndTextBlocks(result, display) }
+        ScrollableColumn(
+                scrollState = scrollState,
+                modifier = Modifier.fillMaxHeight()
+        ) {
+            Box { ImageAndTextBlocks(result, display, scrollState) }
 
             QueryTextInput(scrollState)
 
-            Box(Modifier.background(Color.Red).height(50.dp)) {  }
+            Box(
+                    Modifier
+                            .background(Color.Red)
+                            .preferredHeight(50.dp)
+            )
         }
     }
 
@@ -103,9 +117,12 @@ class AnalyzeFragment : Fragment() {
             startActivity(shareIntent)
         }
 
-        Row(
+        Row {
+            IconButton(
+                modifier = Modifier.align(Alignment.CenterVertically),
+                onClick = { model.query = TextFieldValue() }
+            ) { Icon(asset = Icons.Rounded.Clear) }
 
-        ) {
             OutlinedTextField(
                 model.query, {
                     model.query = it
@@ -117,7 +134,7 @@ class AnalyzeFragment : Fragment() {
                 },
                 onTextInputStarted = {
                     lifecycleScope.launch {
-                        delay(500)
+                        delay(600)
                         scrollState.smoothScrollTo(scrollState.maxValue)
                     }
                 }
@@ -131,7 +148,7 @@ class AnalyzeFragment : Fragment() {
     }
 
     @Composable
-    fun ImageAndTextBlocks(result: Success, display: DisplayMetrics) {
+    fun ImageAndTextBlocks(result: Success, display: DisplayMetrics, scrollState: ScrollState) {
         val (scale, setScale) = remember { mutableStateOf(0F) }
 
         val bm = result.image
@@ -150,23 +167,48 @@ class AnalyzeFragment : Fragment() {
         )
 
         for (block in result.blocks) {
-            ShowTextBlock(block, scale * densityScale)
+            ShowTextBlock(block, scale * densityScale, scrollState)
         }
     }
 
     @Composable
     fun FailurePage(result: Failure) {
-        Column {
-            Text("Something went wrong:")
-            Text(result.reason)
+        Column(
+            Modifier
+                .fillMaxSize()
+        ) {
+            Text(
+                "Something went wrong",
+                fontFamily = juraFont.asFontFamily(),
+                fontSize = TextUnit.Em(10)
+            )
+            Text(result.reason, fontFamily = juraFont.asFontFamily())
         }
     }
 
     @Composable
     fun InProgressPage(result: InProgress) {
-        Column {
-            Text("Wahoo")
-            Text(result.message)
+        Column(
+            Modifier
+                .fillMaxSize()
+        ) {
+            Column(
+                    Modifier.align(Alignment.CenterHorizontally)
+            ) {
+                Row {
+                    Icon(
+                            asset = vectorResource(id = R.drawable.dict_logo),
+                            modifier = Modifier.preferredSize(60.dp)
+                    )
+                    Text(
+                            "Dictionarian",
+                            Modifier.align(Alignment.CenterVertically),
+                            fontFamily = latoFont.asFontFamily(),
+                            fontSize = TextUnit.Em(10)
+                    )
+                }
+                Text(result.message, fontFamily = juraFont.asFontFamily())
+            }
         }
     }
 
@@ -177,9 +219,16 @@ class AnalyzeFragment : Fragment() {
             FailurePage(Failure(reason = "I suck. This is an example"))
         }
     }
+    @Preview(showBackground = true)
+    @Composable
+    fun PreviewWaitingPage() {
+        DictionarianTheme {
+            InProgressPage(InProgress(message = "Tada. Nothing to do."))
+        }
+    }
 
     @Composable
-    fun ShowTextBlock(block: TextBlock, scale: Float) {
+    fun ShowTextBlock(block: TextBlock, scale: Float, scrollState: ScrollState? = null) {
         if (scale == 0F) return
 
         val backdrop = Color.White
@@ -205,6 +254,7 @@ class AnalyzeFragment : Fragment() {
                         newText,
                         TextRange(newText.length - block.text.length, newText.length)
                     )
+                    scrollState?.smoothScrollTo(scrollState.maxValue)
                 }
         ) {
             Text(
