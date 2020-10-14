@@ -23,6 +23,8 @@ class AnalyzeViewModel : ViewModel() {
 
     var query: TextFieldValue by mutableStateOf(TextFieldValue())
 
+    var opacity: Float by mutableStateOf(0.9F)
+
     private var lastAnalyzedUri: Uri? = null
 
     fun analyze(image: Bitmap) = viewModelScope.launch {

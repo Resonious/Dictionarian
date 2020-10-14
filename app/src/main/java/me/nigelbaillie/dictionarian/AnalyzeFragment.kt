@@ -15,11 +15,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Clear
+import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Share
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.*
+import androidx.compose.ui.draw.drawOpacity
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
@@ -97,11 +99,25 @@ class AnalyzeFragment : Fragment() {
 
             QueryTextInput(scrollState)
 
+            OpacitySlider()
+
             Box(
                     Modifier
                             .background(Color.Red)
                             .preferredHeight(50.dp)
             )
+        }
+    }
+
+    @Composable
+    fun OpacitySlider() {
+        Row {
+            IconButton(
+                    modifier = Modifier.align(Alignment.CenterVertically),
+                    onClick = { model.opacity = 0.9F }
+            ) { Icon(asset = Icons.Rounded.Refresh) }
+
+            Slider(value = model.opacity, onValueChange = { model.opacity = it })
         }
     }
 
@@ -245,7 +261,7 @@ class AnalyzeFragment : Fragment() {
                 .width((block.width * scale).dp)
                 .height((block.height * scale).dp)
                 .padding(0.dp)
-                .background(backdrop.copy(alpha = 0.9F))
+                .background(backdrop.copy(alpha = model.opacity))
                 .border(0.dp, backdrop, RectangleShape)
                 .layoutId("text:${block.text}")
                 .clickable {
@@ -260,9 +276,10 @@ class AnalyzeFragment : Fragment() {
             Text(
                 block.text,
                 fontSize = TextUnit.Sp(thinness * scale * 0.75F),
-                color = foreground,
+                color = foreground.copy(alpha = model.opacity),
                 overflow = TextOverflow.Clip,
-                softWrap = true
+                softWrap = true,
+                lineHeight = TextUnit.Em(0.94F)
             )
         }
     }
