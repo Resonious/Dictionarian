@@ -114,6 +114,11 @@ class AnalyzeFragment : Fragment() {
         Row {
             IconButton(
                     modifier = Modifier.align(Alignment.CenterVertically),
+                    onClick = { model.opacity = 0F }
+            ) { Icon(asset = Icons.Rounded.Clear) }
+
+            IconButton(
+                    modifier = Modifier.align(Alignment.CenterVertically),
                     onClick = { model.opacity = 0.9F }
             ) { Icon(asset = Icons.Rounded.Refresh) }
 
@@ -182,9 +187,21 @@ class AnalyzeFragment : Fragment() {
             contentScale = LiveScale(ContentScale.Inside, setScale)
         )
 
+        val data = TextBlockData(scale * densityScale, model.opacity)
         for (block in result.blocks) {
-            ShowTextBlock(block, scale * densityScale, scrollState)
+            ShowTextBlock(block, data, scrollState)
         }
+    }
+
+    class TextBlockData(
+            val scale: Float,
+            val opacity: Float
+    ) {
+        val backdrop = if (opacity < 0.05F) Color.Transparent
+                       else Color.White.copy(alpha = opacity)
+        val border = if (opacity < 0.05F) Color.Transparent
+                     else Color.White
+        val text = Color.Black.copy(alpha = opacity)
     }
 
     @Composable
@@ -244,11 +261,8 @@ class AnalyzeFragment : Fragment() {
     }
 
     @Composable
-    fun ShowTextBlock(block: TextBlock, scale: Float, scrollState: ScrollState? = null) {
-        if (scale == 0F) return
-
-        val backdrop = Color.White
-        val foreground = Color.Black
+    fun ShowTextBlock(block: TextBlock, data: TextBlockData, scrollState: ScrollState? = null) {
+        if (data.scale == 0F) return
 
         val thinness = if (block.height > block.width)
             block.width
@@ -257,12 +271,12 @@ class AnalyzeFragment : Fragment() {
 
         Box(
             Modifier
-                .offset((block.x * scale).dp, (block.y * scale).dp)
-                .width((block.width * scale).dp)
-                .height((block.height * scale).dp)
+                .offset((block.x * data.scale).dp, (block.y * data.scale).dp)
+                .width((block.width * data.scale).dp)
+                .height((block.height * data.scale).dp)
                 .padding(0.dp)
-                .background(backdrop.copy(alpha = model.opacity))
-                .border(0.dp, backdrop, RectangleShape)
+                .background(data.backdrop)
+                .border(0.dp, data.border, RectangleShape)
                 .layoutId("text:${block.text}")
                 .clickable {
                     val newText = model.query.text + block.text
@@ -273,13 +287,14 @@ class AnalyzeFragment : Fragment() {
                     scrollState?.smoothScrollTo(scrollState.maxValue)
                 }
         ) {
+            if (data.opacity < 0.05F) return@Box
             Text(
-                block.text,
-                fontSize = TextUnit.Sp(thinness * scale * 0.75F),
-                color = foreground.copy(alpha = model.opacity),
-                overflow = TextOverflow.Clip,
-                softWrap = true,
-                lineHeight = TextUnit.Em(0.94F)
+                    block.text,
+                    fontSize = TextUnit.Sp(thinness * data.scale * 0.75F),
+                    color = data.text,
+                    overflow = TextOverflow.Clip,
+                    softWrap = true,
+                    lineHeight = TextUnit.Em(0.97F)
             )
         }
     }
@@ -307,6 +322,7 @@ class AnalyzeFragment : Fragment() {
                     .background(Color.Red)
                     .border(0.dp, Color.White, CircleShape),
             ) {}
+            /*
             ShowTextBlock(TextBlock(
                 bounds= Rect(Offset(195.0F, 142.0F), Offset(878.0F, 242.0F)),
                 text="台風の前にやっておく..."
@@ -319,6 +335,7 @@ class AnalyzeFragment : Fragment() {
                 bounds= Rect(Offset(155.0F, 530.0F), Offset(791.0F, 592.0F)),
                 text="台風の接近が予想される場合"
             ), scale)
+             */
         }
     }
 }
