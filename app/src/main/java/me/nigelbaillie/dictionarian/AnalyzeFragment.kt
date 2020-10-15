@@ -1,6 +1,9 @@
 package me.nigelbaillie.dictionarian
 
+import android.app.Activity
 import android.content.Intent
+import android.content.pm.PackageInfo
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.os.Bundle
 import android.util.DisplayMetrics
@@ -8,6 +11,8 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.activity.result.ActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Box
@@ -16,14 +21,13 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Clear
 import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Share
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.*
-import androidx.compose.ui.draw.drawOpacity
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.asAndroidBitmap
@@ -33,21 +37,18 @@ import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.vectorResource
-import androidx.compose.ui.selection.Selection
-import androidx.compose.ui.selection.SelectionContainer
 import androidx.compose.ui.text.TextRange
-import androidx.compose.ui.text.font.*
+import androidx.compose.ui.text.font.ResourceFont
+import androidx.compose.ui.text.font.asFontFamily
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
-import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.ui.tooling.preview.Preview
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import me.nigelbaillie.dictionarian.ocr.Failure
@@ -57,6 +58,7 @@ import me.nigelbaillie.dictionarian.ocr.TextBlock
 import me.nigelbaillie.dictionarian.ui.DictionarianTheme
 import me.nigelbaillie.dictionarian.ui.LiveScale
 
+
 class AnalyzeFragment : Fragment() {
     private val model: AnalyzeViewModel by activityViewModels()
 
@@ -64,9 +66,9 @@ class AnalyzeFragment : Fragment() {
     private val latoFont = ResourceFont(R.font.lato)
 
     override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
+            inflater: LayoutInflater,
+            container: ViewGroup?,
+            savedInstanceState: Bundle?
     ): View? {
         val context = requireContext()
         val display = context.resources.displayMetrics
@@ -76,7 +78,7 @@ class AnalyzeFragment : Fragment() {
                 DictionarianTheme {
                     Surface {
                         when (val value = model.result) {
-                            null -> InProgressPage(InProgress("'Share' an image from another app!"))
+                            null -> HomePage()
                             is Success -> AnalyzeResultImage(result = value, display = display)
                             is Failure -> FailurePage(result = value)
                             is InProgress -> InProgressPage(result = value)
@@ -136,35 +138,46 @@ class AnalyzeFragment : Fragment() {
             }
             val shareIntent = Intent.createChooser(sendIntent, "Lookup")
             startActivity(shareIntent)
+            model.query = TextFieldValue()
+        }
+
+        fun kanjiStudy() {
+            val kanjiStudyIntent: Intent = Intent().apply {
+                putExtra(Intent.EXTRA_TEXT, model.query.text)
+                action = Intent.ACTION_SEND
+                type = "text/plain"
+            }
+            startActivity(kanjiStudyIntent)
+            model.query = TextFieldValue()
         }
 
         Row {
             IconButton(
-                modifier = Modifier.align(Alignment.CenterVertically),
-                onClick = { model.query = TextFieldValue() }
+                    modifier = Modifier.align(Alignment.CenterVertically),
+                    onClick = { model.query = TextFieldValue() }
             ) { Icon(asset = Icons.Rounded.Clear) }
 
             OutlinedTextField(
-                model.query, {
-                    model.query = it
-                },
-                imeAction = ImeAction.Search,
-                onImeActionPerformed = { _, keyboard ->
-                    keyboard?.hideSoftwareKeyboard()
-                    shareQuery()
-                },
-                onTextInputStarted = {
-                    lifecycleScope.launch {
-                        delay(600)
-                        scrollState.smoothScrollTo(scrollState.maxValue)
+                    model.query, {
+                        model.query = it
+                    },
+                    imeAction = ImeAction.Search,
+                    onImeActionPerformed = { _, keyboard ->
+                        keyboard?.hideSoftwareKeyboard()
+                        shareQuery()
+                    },
+                    onTextInputStarted = {
+                        lifecycleScope.launch {
+                            delay(600)
+                            scrollState.smoothScrollTo(scrollState.maxValue)
+                        }
                     }
-                }
             )
 
             IconButton(
-                modifier = Modifier.align(Alignment.CenterVertically),
-                onClick = { shareQuery() }
-            ) { Icon(asset = Icons.Rounded.Share) }
+                    modifier = Modifier.align(Alignment.CenterVertically),
+                    onClick = { kanjiStudy() }
+            ) { Icon(asset = Icons.Rounded.Search) }
         }
     }
 
@@ -182,9 +195,9 @@ class AnalyzeFragment : Fragment() {
         Log.d("NIGELMSG", "Scale is effectively $scale * $densityScale = ${scale * densityScale}")
 
         Image(
-            bm.asImageAsset(),
-            Modifier.layoutId("image"),
-            contentScale = LiveScale(ContentScale.Inside, setScale)
+                bm.asImageAsset(),
+                Modifier.layoutId("image"),
+                contentScale = LiveScale(ContentScale.Inside, setScale)
         )
 
         val data = TextBlockData(scale * densityScale, model.opacity)
@@ -205,15 +218,68 @@ class AnalyzeFragment : Fragment() {
     }
 
     @Composable
+    fun HomePage() {
+        val chooseFile = {
+            val selectFile = Intent(Intent.ACTION_GET_CONTENT).apply { type = "image/*" }
+            val chooser = Intent.createChooser(selectFile, "Image to analyze")
+
+            // This is NASTY... wtf
+            val startForResult =
+                    registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+                        result: ActivityResult? ->
+                        if (result?.resultCode == Activity.RESULT_OK) {
+                            result.data?.let { intent: Intent ->
+                                model.analyzeData(intent)
+                            }
+                        }
+                    }
+            startForResult.launch(chooser)
+        }
+
+        Column(
+                Modifier
+                        .fillMaxSize()
+        ) {
+            Column(
+                    Modifier.align(Alignment.CenterHorizontally)
+            ) {
+                DictionarianLogo()
+
+                Text("Share from another app or choose here", fontFamily = juraFont.asFontFamily())
+
+                OutlinedButton(onClick = chooseFile) {
+                    Text("Browse", fontFamily = juraFont.asFontFamily())
+                }
+            }
+        }
+    }
+
+    @Composable
+    fun DictionarianLogo() {
+        Row {
+            Icon(
+                    asset = vectorResource(id = R.drawable.dict_logo),
+                    modifier = Modifier.preferredSize(60.dp)
+            )
+            Text(
+                    "Dictionarian",
+                    Modifier.align(Alignment.CenterVertically),
+                    fontFamily = latoFont.asFontFamily(),
+                    fontSize = TextUnit.Em(10)
+            )
+        }
+    }
+
+    @Composable
     fun FailurePage(result: Failure) {
         Column(
-            Modifier
-                .fillMaxSize()
+                Modifier
+                        .fillMaxSize()
         ) {
             Text(
-                "Something went wrong",
-                fontFamily = juraFont.asFontFamily(),
-                fontSize = TextUnit.Em(10)
+                    "Something went wrong",
+                    fontFamily = juraFont.asFontFamily(),
+                    fontSize = TextUnit.Em(10)
             )
             Text(result.reason, fontFamily = juraFont.asFontFamily())
         }
@@ -222,24 +288,13 @@ class AnalyzeFragment : Fragment() {
     @Composable
     fun InProgressPage(result: InProgress) {
         Column(
-            Modifier
-                .fillMaxSize()
+                Modifier
+                        .fillMaxSize()
         ) {
             Column(
                     Modifier.align(Alignment.CenterHorizontally)
             ) {
-                Row {
-                    Icon(
-                            asset = vectorResource(id = R.drawable.dict_logo),
-                            modifier = Modifier.preferredSize(60.dp)
-                    )
-                    Text(
-                            "Dictionarian",
-                            Modifier.align(Alignment.CenterVertically),
-                            fontFamily = latoFont.asFontFamily(),
-                            fontSize = TextUnit.Em(10)
-                    )
-                }
+                DictionarianLogo()
                 Text(result.message, fontFamily = juraFont.asFontFamily())
             }
         }
@@ -270,22 +325,22 @@ class AnalyzeFragment : Fragment() {
             block.height
 
         Box(
-            Modifier
-                .offset((block.x * data.scale).dp, (block.y * data.scale).dp)
-                .width((block.width * data.scale).dp)
-                .height((block.height * data.scale).dp)
-                .padding(0.dp)
-                .background(data.backdrop)
-                .border(0.dp, data.border, RectangleShape)
-                .layoutId("text:${block.text}")
-                .clickable {
-                    val newText = model.query.text + block.text
-                    model.query = model.query.copy(
-                        newText,
-                        TextRange(newText.length - block.text.length, newText.length)
-                    )
-                    scrollState?.smoothScrollTo(scrollState.maxValue)
-                }
+                Modifier
+                        .offset((block.x * data.scale).dp, (block.y * data.scale).dp)
+                        .width((block.width * data.scale).dp)
+                        .height((block.height * data.scale).dp)
+                        .padding(0.dp)
+                        .background(data.backdrop)
+                        .border(0.dp, data.border, RectangleShape)
+                        .layoutId("text:${block.text}")
+                        .clickable {
+                            val newText = model.query.text + block.text
+                            model.query = model.query.copy(
+                                    newText,
+                                    TextRange(newText.length - block.text.length, newText.length)
+                            )
+                            scrollState?.smoothScrollTo(scrollState.maxValue)
+                        }
         ) {
             if (data.opacity < 0.05F) return@Box
             Text(
@@ -311,16 +366,16 @@ class AnalyzeFragment : Fragment() {
 
         DictionarianTheme {
             Image(
-                asset = bitmap.asImageAsset(),
-                contentScale = LiveScale(ContentScale.Inside, setScale)
+                    asset = bitmap.asImageAsset(),
+                    contentScale = LiveScale(ContentScale.Inside, setScale)
             )
             Box(
-                Modifier
-                    .offset(900.dp, 0.dp)
-                    .preferredWidth(90.dp)
-                    .preferredHeight(90.dp)
-                    .background(Color.Red)
-                    .border(0.dp, Color.White, CircleShape),
+                    Modifier
+                            .offset(900.dp, 0.dp)
+                            .preferredWidth(90.dp)
+                            .preferredHeight(90.dp)
+                            .background(Color.Red)
+                            .border(0.dp, Color.White, CircleShape),
             ) {}
             /*
             ShowTextBlock(TextBlock(

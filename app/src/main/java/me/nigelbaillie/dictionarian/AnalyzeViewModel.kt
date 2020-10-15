@@ -2,6 +2,7 @@ package me.nigelbaillie.dictionarian
 
 import android.app.Application
 import android.content.ContentResolver
+import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
@@ -18,12 +19,14 @@ import kotlinx.coroutines.launch
 import me.nigelbaillie.dictionarian.ocr.*
 
 class AnalyzeViewModel : ViewModel() {
+    var context: Context? = null
+
     var result: OCRResult? by mutableStateOf(null)
         private set
 
     var query: TextFieldValue by mutableStateOf(TextFieldValue())
 
-    var opacity: Float by mutableStateOf(0.9F)
+    var opacity: Float by mutableStateOf(0F)
 
     private var lastAnalyzedUri: Uri? = null
 
@@ -33,19 +36,11 @@ class AnalyzeViewModel : ViewModel() {
         result = Analyzer().analyze(image)
     }
 
-    fun analyze(intent: Intent, contentResolver: ContentResolver) {
-        val uri = intent.getParcelableExtra<Parcelable>(Intent.EXTRA_STREAM) as? Uri
-        if (uri == null) {
-            result = Failure("Invalid image share")
-            return
-        }
-        else if (uri == lastAnalyzedUri) {
-            return
-        }
+    fun analyze(uri: Uri) {
         result = InProgress("Downloading image")
 
         viewModelScope.launch(Dispatchers.IO) {
-            val source = ImageDecoder.createSource(contentResolver, uri)
+            val source = ImageDecoder.createSource(context!!.contentResolver, uri)
             val bitmap = ImageDecoder.decodeBitmap(source)
             result = InProgress("Analyzing image")
             result = Analyzer().analyze(bitmap)
@@ -55,5 +50,29 @@ class AnalyzeViewModel : ViewModel() {
                 else -> null
             }
         }
+    }
+
+    fun analyzeExtraStream(intent: Intent) {
+        val uri = intent.getParcelableExtra<Parcelable>(Intent.EXTRA_STREAM) as? Uri
+        if (uri == null) {
+            result = Failure("Invalid image share")
+            return
+        }
+        else if (uri == lastAnalyzedUri) {
+            return
+        }
+        analyze(uri)
+    }
+
+    fun analyzeData(intent: Intent) {
+        val uri = intent.data
+        if (uri == null) {
+            result = Failure("No data")
+            return
+        }
+        else if (uri == lastAnalyzedUri) {
+            return
+        }
+        analyze(uri)
     }
 }

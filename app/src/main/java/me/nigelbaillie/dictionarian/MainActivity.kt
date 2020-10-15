@@ -1,13 +1,18 @@
 package me.nigelbaillie.dictionarian
 
 import android.content.Intent
+import android.content.pm.PackageInfo
+import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
+import android.os.Parcelable
 import android.util.Log
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.findNavController
 import androidx.navigation.ui.setupWithNavController
 import com.google.android.material.navigation.NavigationView
+import me.nigelbaillie.dictionarian.ocr.Failure
 
 class MainActivity : AppCompatActivity() {
     private val model: AnalyzeViewModel by viewModels()
@@ -30,13 +35,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun handleIntent(intent: Intent?) {
+        model.context = applicationContext
+
         when (intent?.action) {
             Intent.ACTION_SEND -> {
-                Log.d("NIGELMSG", "MainActivity.onCreate called with SEND intent")
-                model.analyze(intent, contentResolver)
+                Log.d("NIGELMSG", "MainActivity.handleIntent called with SEND intent")
+                model.analyzeExtraStream(intent)
             }
             else -> {
-                Log.d("NIGELMSG", "MainActivity.onCreate called with no intent")
+                Log.d("NIGELMSG", "MainActivity.handleIntent called with no intent")
                 // ...
             }
         }
