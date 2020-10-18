@@ -60,6 +60,8 @@ import me.nigelbaillie.dictionarian.ocr.Success
 import me.nigelbaillie.dictionarian.ocr.TextBlock
 import me.nigelbaillie.dictionarian.ui.DictionarianTheme
 import me.nigelbaillie.dictionarian.ui.LiveScale
+import me.nigelbaillie.dictionarian.ui.logoDark
+import me.nigelbaillie.dictionarian.ui.logoTeal
 
 
 class AnalyzeFragment : Fragment() {
@@ -220,6 +222,11 @@ class AnalyzeFragment : Fragment() {
         val text = Color.Black.copy(alpha = opacity)
     }
 
+    val mainColumnMods =
+        Modifier
+            .fillMaxSize()
+            .padding(20.dp)
+
     @Composable
     fun HomePage() {
         val chooseFile = {
@@ -248,22 +255,37 @@ class AnalyzeFragment : Fragment() {
             }
         }
 
-        Column(
-                Modifier
-                        .fillMaxSize()
-        ) {
+        Column(mainColumnMods, verticalArrangement = Arrangement.SpaceBetween) {
             Column(
-                    Modifier.align(Alignment.CenterHorizontally)
+                Modifier.align(Alignment.CenterHorizontally)
             ) {
                 DictionarianLogo()
 
                 Text("Share from another app or choose here", fontFamily = juraFont.asFontFamily())
+            }
 
-                OutlinedButton(onClick = chooseFile) {
+            Icon(
+                vectorResource(R.drawable.ic_downarrow),
+                Modifier.align(Alignment.CenterHorizontally),
+                if (isSystemInDarkTheme()) logoTeal else logoDark
+            )
+
+            Column {
+                val buttonModifier = Modifier.fillMaxWidth()
+
+                OutlinedButton(
+                    chooseFile,
+                    buttonModifier
+                ) {
                     Text("Browse", fontFamily = juraFont.asFontFamily())
                 }
 
-                OutlinedButton(onClick = goToCamera) {
+                Spacer(modifier = Modifier.height(10.dp))
+
+                OutlinedButton(
+                    goToCamera,
+                    buttonModifier
+                ) {
                     Text("Camera", fontFamily = juraFont.asFontFamily())
                 }
             }
@@ -288,10 +310,7 @@ class AnalyzeFragment : Fragment() {
 
     @Composable
     fun FailurePage(result: Failure) {
-        Column(
-                Modifier
-                        .fillMaxSize()
-        ) {
+        Column(mainColumnMods.fillMaxSize()) {
             Text(
                     "Something went wrong",
                     fontFamily = juraFont.asFontFamily(),
@@ -303,12 +322,9 @@ class AnalyzeFragment : Fragment() {
 
     @Composable
     fun InProgressPage(result: InProgress) {
-        Column(
-                Modifier
-                        .fillMaxSize()
-        ) {
+        Column(Modifier.fillMaxSize()) {
             Column(
-                    Modifier.align(Alignment.CenterHorizontally)
+                mainColumnMods.align(Alignment.CenterHorizontally)
             ) {
                 DictionarianLogo()
                 Text(result.message, fontFamily = juraFont.asFontFamily())

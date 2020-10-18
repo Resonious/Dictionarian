@@ -36,6 +36,7 @@
             android:name=".CameraActivity"
             android:label="Dictionarian Camera"
             android:theme="@style/Theme.Dictionarian.NoActionBar"
+            android:exported="true"
             >
         </activity>
     </application>
