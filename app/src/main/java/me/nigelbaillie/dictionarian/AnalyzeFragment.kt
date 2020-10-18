@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
+import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.graphics.Bitmap
 import android.os.Bundle
 import android.util.DisplayMetrics
@@ -11,6 +12,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.*
@@ -45,6 +47,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
@@ -236,6 +239,15 @@ class AnalyzeFragment : Fragment() {
             startForResult.launch(chooser)
         }
 
+        val goToCamera = {
+            val activity = model.activity
+
+            if (activity != null) {
+                val camIntent = Intent(activity, CameraActivity::class.java)
+                activity.startActivity(camIntent)
+            }
+        }
+
         Column(
                 Modifier
                         .fillMaxSize()
@@ -249,6 +261,10 @@ class AnalyzeFragment : Fragment() {
 
                 OutlinedButton(onClick = chooseFile) {
                     Text("Browse", fontFamily = juraFont.asFontFamily())
+                }
+
+                OutlinedButton(onClick = goToCamera) {
+                    Text("Camera", fontFamily = juraFont.asFontFamily())
                 }
             }
         }

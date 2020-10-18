@@ -36,6 +36,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun handleIntent(intent: Intent?) {
         model.context = applicationContext
+        model.activity = this
 
         when (intent?.action) {
             Intent.ACTION_SEND -> {

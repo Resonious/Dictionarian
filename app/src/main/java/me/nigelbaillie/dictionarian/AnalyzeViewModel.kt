@@ -20,6 +20,7 @@ import me.nigelbaillie.dictionarian.ocr.*
 
 class AnalyzeViewModel : ViewModel() {
     var context: Context? = null
+    var activity: MainActivity? = null
 
     var result: OCRResult? by mutableStateOf(null)
         private set
@@ -55,7 +56,7 @@ class AnalyzeViewModel : ViewModel() {
     fun analyzeExtraStream(intent: Intent) {
         val uri = intent.getParcelableExtra<Parcelable>(Intent.EXTRA_STREAM) as? Uri
         if (uri == null) {
-            result = Failure("Invalid image share")
+            analyzeData(intent)
             return
         }
         else if (uri == lastAnalyzedUri) {
