@@ -47,6 +47,7 @@ class MainActivity : AppCompatActivity() {
                         data = Uri.parse("https://lookup.nigelbaillie.me/dict#${text}")
                     }
                     startActivity(browserIntent)
+                    finish()
                     return
                 }
 
