@@ -40,6 +40,16 @@ class MainActivity : AppCompatActivity() {
 
         when (intent?.action) {
             Intent.ACTION_SEND -> {
+                if (intent.type == "text/plain") {
+                    val text = intent.getStringExtra(Intent.EXTRA_TEXT)
+                    val browserIntent = Intent().apply {
+                        action = Intent.ACTION_VIEW
+                        data = Uri.parse("https://lookup.nigelbaillie.me/dict#${text}")
+                    }
+                    startActivity(browserIntent)
+                    return
+                }
+
                 Log.d("NIGELMSG", "MainActivity.handleIntent called with SEND intent")
                 model.analyzeExtraStream(intent)
             }
